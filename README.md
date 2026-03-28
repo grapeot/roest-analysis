@@ -64,7 +64,7 @@ python -m roest_analysis.cli machine flagged-logs --machine-id "$ROEST_MACHINE_I
 
 ## Visualization 怎么看
 
-每张图有四个面板：Temperature（bean + inlet）、ROR30（平滑升温速度）、Controls（heat + fan）、Crack signal（所有非零 crack 点及 onset 标线）。四个面板共享时间轴，practical onset 和 active onset 以垂直虚线贯穿全图。
+每张图有四个面板：Temperature（bean + inlet）、ROR30（按每分钟表示的平滑升温速度）、Controls（heat + fan）、Crack signal（所有非零 crack 点及 onset 标线）。四个面板共享时间轴，practical onset 和 active onset 以垂直虚线贯穿全图。
 
 图表的核心价值在于让你同时看到温度走向、升温速率、控制动作和 crack 信号之间的时间关系。具体看什么取决于你在诊断什么问题——development 偏短要关注 onset 之后的 ROR 和 heat 变化，crack 信号不一致要关注 practical 和 active onset 的分离程度，ROR 异常要和 heat/fan 的控制动作对照。
 
@@ -86,7 +86,7 @@ python -m roest_analysis.cli machine flagged-logs --machine-id "$ROEST_MACHINE_I
 
 这个案例的重点不在 cup notes，而在技术诊断本身。图上会同时看到较早的 practical onset 和更晚的 active cluster，两者明显分离。如果把最早的 crack 点直接当作一爆起点，development 会被高估；如果只看后面的 active cluster，又会忽略前面已经开始出现的结构变化。这里真正有价值的不是选一个“唯一正确”的时间点，而是承认它存在歧义，并据此收缩结论的强度。
 
-从调整角度看，这类曲线通常说明一爆附近的能量管理还不够稳定：要么进 crack 时热动量偏高，要么 crack 发生得分成两个阶段，导致 development 的定义本身变得摇摆。对用户来说，系统给出的建议不该是一个假装精确的单点答案，而是一个技术上的改进方向：下一锅优先让一爆更连续、更成簇，减少前驱 crack 与主体 crack 的分离；同时把 heat / fan 的动作做得更连贯，让 development 建立在更稳定的 crack 结构上。这个案例展示的是系统在面对模糊数据时如何给出保守但有用的诊断。
+从调整角度看，这类曲线更适合从热量管理来理解，而不是把“不要分簇”当成目标。分簇本身可能有传感器噪声，也可能有豆子层面的离散性，不一定是你能直接控制的对象。真正更可控的是一爆前后的热动量和控制动作：下一锅优先检查 crack 前 30 到 60 秒的 heat / fan 是否让豆子带着过高动量进入一爆，或者一爆附近的控制动作是否过于跳变。系统给出的价值在于把注意力从“修一个单点事件”转回到“修热量和控制结构”，也就是给出一个更靠谱的技术改进方向。
 
 ## 测试策略
 
@@ -171,7 +171,7 @@ python -m roest_analysis.cli machine flagged-logs --machine-id "$ROEST_MACHINE_I
 
 ## Reading the Visualizations
 
-Each chart has four panels: Temperature (bean + inlet), ROR30 (smoothed rate of rise), Controls (heat + fan), and Crack signal (all non-zero crack points with onset markers). The panels share a time axis; practical onset and active onset appear as vertical dashed lines across all four.
+Each chart has four panels: Temperature (bean + inlet), ROR30 (smoothed rate of rise expressed per minute), Controls (heat + fan), and Crack signal (all non-zero crack points with onset markers). The panels share a time axis; practical onset and active onset appear as vertical dashed lines across all four.
 
 The chart's core value is showing the temporal relationship between temperature trajectory, rate of rise, control actions, and crack signals simultaneously. What you focus on depends on what you are diagnosing — short development calls for attention to post-onset ROR and heat changes, inconsistent crack signals call for examining the separation between practical and active onset, and ROR anomalies should be cross-referenced with heat/fan control actions.
 
@@ -193,7 +193,7 @@ That changes the recommended action. Instead of compensating only at the brewing
 
 This case is less about cup notes and more about technical interpretation. The chart shows an earlier practical onset and a later active cluster with clear separation. If the earliest crack point were treated as the definitive first crack, development would be overstated; if only the later active cluster were used, the earlier structural change would be ignored. The useful move here is not to pretend there is one perfectly correct timestamp, but to acknowledge ambiguity and tighten the confidence of the conclusion.
 
-From an adjustment perspective, this usually points to unstable energy management around crack: either the roast is entering crack with too much momentum, or crack is emerging in two stages rather than one coherent cluster. The recommendation is therefore technical rather than flavor-led: make first crack more continuous and clustered, reduce the gap between precursor crack events and the main crack body, and make heat/fan actions more continuous so development rests on a more stable crack structure. This case shows the system's diagnostic value when the data itself is messy: it avoids fake precision and still turns the profile into a usable next-step decision.
+From an adjustment perspective, this is better understood as an energy-management problem, not as a command to “make crack stop splitting.” Split clusters can reflect sensor noise or bean-level variability, which are not always directly controllable. What is more actionable is the heat path into and through crack: review whether the roast is entering crack with too much momentum, and whether heat/fan changes around crack are too abrupt. The value of the system here is that it shifts attention away from chasing a single event and back toward the controllable thermal structure of the roast.
 
 ## Testing Strategy
 

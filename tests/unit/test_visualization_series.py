@@ -17,6 +17,7 @@ def test_build_plot_series_extracts_core_signals():
     assert series["inlet_temp"] == [230.0, 220.0, 240.0]
     assert series["heat"] == [40.0, 50.0, 55.0]
     assert series["fan"] == [43.0, 44.0, 45.0]
+    assert series["ror30"] == [None, -110.0, 60.0]
     assert series["crack_points"][0]["time_s"] == 60.0
 
 

@@ -46,7 +46,7 @@ def _ror30(datapoints: list[dict[str, Any]], index: int) -> float | None:
     dt = current_t - _time_s(previous)
     if dt <= 0:
         return None
-    return (current_bt - previous_bt) / dt
+    return ((current_bt - previous_bt) / dt) * 60.0
 
 
 def build_plot_series(datapoints: list[dict[str, Any]], crack_analysis: dict[str, Any]) -> dict[str, Any]:

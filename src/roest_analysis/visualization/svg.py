@@ -99,7 +99,7 @@ def write_roast_svg(
     if ror_x:
         ror_axis.plot(ror_x, ror_y, color="#7c3aed", linewidth=2.2, label="ROR30")
     ror_axis.set_title("ROR30", loc="left", fontsize=13, fontweight="bold")
-    ror_axis.set_ylabel("°C/s")
+    ror_axis.set_ylabel("°C/min")
     ror_axis.grid(True, axis="both", linestyle="--", alpha=0.25)
     if ror_x:
         ror_axis.legend(loc="upper left")
