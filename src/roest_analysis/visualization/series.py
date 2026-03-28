@@ -59,6 +59,20 @@ def build_plot_series(datapoints: list[dict[str, Any]], crack_analysis: dict[str
     heat = [_control(point, "heat") for point in datapoints]
     fan = [_control(point, "fan") for point in datapoints]
     ror30 = [_ror30(datapoints, idx) for idx in range(len(datapoints))]
+    positive_started = False
+    normalized_ror30: list[float | None] = []
+    for value in ror30:
+        if value is None:
+            normalized_ror30.append(None)
+            continue
+        if not positive_started:
+            if value >= 0:
+                positive_started = True
+                normalized_ror30.append(value)
+            else:
+                normalized_ror30.append(None)
+        else:
+            normalized_ror30.append(value)
 
     notes: list[str] = []
     if all(value is None for value in inlet_temp):
@@ -70,7 +84,7 @@ def build_plot_series(datapoints: list[dict[str, Any]], crack_analysis: dict[str
         "inlet_temp": inlet_temp,
         "heat": heat,
         "fan": fan,
-        "ror30": ror30,
+        "ror30": normalized_ror30,
         "crack_points": crack_analysis.get("points", []),
         "practical_onset": crack_analysis.get("practical_onset"),
         "active_onset": crack_analysis.get("active_onset"),
