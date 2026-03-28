@@ -74,13 +74,19 @@ python -m roest_analysis.cli machine flagged-logs --machine-id "$ROEST_MACHINE_I
 
 ![Round 1 baseline](docs/assets/roast_round_1_baseline.svg)
 
-这个 roast 适合看一个完整烘焙的基本结构。crack onset 比较集中，但后段 development 空间有限，更像一个可诊断的 baseline。它展示了系统在标准场景下的分析能力：phase metrics 完整、crack clustering 正常、visualization 清晰呈现从 turning point 到 drop 的全过程。
+这锅不只是一个 baseline，也是一条完整的诊断链。技术上看，它的一爆比较集中，没有 split-cluster 的歧义，但 development 只有约 40 秒，development ratio 约 10.3%，ΔBT 也只有约 4.7°C。换句话说，曲线走完了，但后段给豆子建立可溶性和结构的时间偏短。
+
+这和杯测是对得上的：espresso 表现为尖酸、加奶后风味被快速冲淡、即使提高浓度和萃取也还是缺 body。这里的核心不是“单纯萃取不足”，而是 roast 本身没有把后段结构做出来。把技术指标和 cup notes 放在一起看，比较合理的诊断是：这锅的一爆后发展不够，豆子在 espresso 维度上的甜感、厚度和乳饮穿透力没有建立起来。
+
+基于这个诊断，后续调整方向就不该只是“再萃深一点”，而是直接改 roast：让一爆前后的能量衔接更平顺，避免刚进 crack 就急着下豆；同时把 development 再拉长一点，让后段真正把甜感和质感做出来。这个案例展示的不是系统会报几个数字，而是它能把数字和风味症状连成一个可执行的判断。
 
 ### 案例二：第三轮，典型的两阶段 crack
 
 ![Round 3 split crack](docs/assets/roast_round_3_split_crack.svg)
 
-这个案例最能说明为什么 crack 解释需要双层口径。图上会同时看到较早的 practical onset 和更晚的 active cluster，两者明显分离。这类 roast 如果只看第一个 crack 点就开始计算 development，会严重高估发展时间。系统对此给出保守解释，并在 notes 中标注两阶段 crack 的存在。
+这个案例的重点不在 cup notes，而在技术诊断本身。图上会同时看到较早的 practical onset 和更晚的 active cluster，两者明显分离。如果把最早的 crack 点直接当作一爆起点，development 会被高估；如果只看后面的 active cluster，又会忽略前面已经开始出现的结构变化。这里真正有价值的不是选一个“唯一正确”的时间点，而是承认它存在歧义，并据此收缩结论的强度。
+
+从调整角度看，这类曲线通常说明一爆附近的能量管理还不够稳定：要么进 crack 时热动量偏高，要么 crack 发生得分成两个阶段，导致 development 的定义本身变得摇摆。对用户来说，系统给出的建议不该是一个假装精确的单点答案，而是一个技术上的改进方向：下一锅优先让一爆更连续、更成簇，减少前驱 crack 与主体 crack 的分离；同时把 heat / fan 的动作做得更连贯，让 development 建立在更稳定的 crack 结构上。这个案例展示的是系统在面对模糊数据时如何给出保守但有用的诊断。
 
 ## 测试策略
 
@@ -175,13 +181,19 @@ The chart's core value is showing the temporal relationship between temperature 
 
 ![Round 1 baseline](docs/assets/roast_round_1_baseline.svg)
 
-This roast shows the basic structure of a complete roast. Crack onset is concentrated, but post-crack development space is limited — a diagnosable baseline. It demonstrates the system's analysis capability in a standard scenario: complete phase metrics, normal crack clustering, and clear visualization from turning point to drop.
+This roast is more than a baseline; it shows a full diagnostic chain. Technically, first crack is concentrated and not ambiguous, but development is only about 40 seconds, with roughly 10.3% development ratio and only about 4.7°C of post-crack delta BT. In other words, the roast completes cleanly, but the post-crack phase is too short to build much solubility and structure.
+
+That lines up with the cup notes. The espresso presented as sharp acidity, milk drinks lost character quickly, and body stayed thin even when extraction was pushed harder. The problem is not simply “brew deeper.” The roast itself did not build enough post-crack structure. Putting the technical profile and the cup result together, the more plausible diagnosis is underdevelopment in the espresso sense: not raw or broken, but too short in the phase where sweetness, weight, and milk-drink presence should have been established.
+
+That changes the recommended action. Instead of compensating only at the brewing stage, the next roast should smooth out energy transfer around first crack and extend post-crack development enough to actually build sweetness and body. This case shows the value of the system not as a charting tool, but as a way to connect technical signals to a concrete roasting diagnosis.
 
 ### Case 2: Round 3 — classic two-phase crack
 
 ![Round 3 split crack](docs/assets/roast_round_3_split_crack.svg)
 
-This case best illustrates why crack interpretation requires a dual-threshold approach. The chart shows an earlier practical onset and a later active cluster with clear separation. If development time were calculated from the first crack point alone, it would be significantly overestimated. The system provides a conservative interpretation and flags the two-phase crack in its notes.
+This case is less about cup notes and more about technical interpretation. The chart shows an earlier practical onset and a later active cluster with clear separation. If the earliest crack point were treated as the definitive first crack, development would be overstated; if only the later active cluster were used, the earlier structural change would be ignored. The useful move here is not to pretend there is one perfectly correct timestamp, but to acknowledge ambiguity and tighten the confidence of the conclusion.
+
+From an adjustment perspective, this usually points to unstable energy management around crack: either the roast is entering crack with too much momentum, or crack is emerging in two stages rather than one coherent cluster. The recommendation is therefore technical rather than flavor-led: make first crack more continuous and clustered, reduce the gap between precursor crack events and the main crack body, and make heat/fan actions more continuous so development rests on a more stable crack structure. This case shows the system's diagnostic value when the data itself is messy: it avoids fake precision and still turns the profile into a usable next-step decision.
 
 ## Testing Strategy
 
