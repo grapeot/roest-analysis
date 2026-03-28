@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+source "/Users/grapeot/co/knowledge_working/.venv/bin/activate"
+export PYTHONPATH="${ROOT_DIR}/src:${PYTHONPATH:-}"
+
+python -m roest_analysis.cli "$@"
