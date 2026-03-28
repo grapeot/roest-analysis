@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Roest roast log API client and roast analysis toolkit"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["matplotlib>=3.8"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]

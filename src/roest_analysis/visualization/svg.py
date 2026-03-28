@@ -2,40 +2,57 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
-import html
+
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
 
 
-def _fmt_label(seconds: float) -> str:
+def _format_seconds(seconds: float) -> str:
     total = int(round(seconds))
     return f"{total // 60}:{total % 60:02d}"
 
 
-def _polyline_points(times: list[float], values: list[float | None], x0: float, y0: float, width: float, height: float) -> str:
-    valid = [(t, v) for t, v in zip(times, values) if v is not None]
-    if len(valid) < 2:
-        return ""
-    min_t = min(times) if times else 0.0
-    max_t = max(times) if times else 1.0
-    min_v = min(v for _, v in valid)
-    max_v = max(v for _, v in valid)
-    if max_t == min_t:
-        max_t += 1.0
-    if max_v == min_v:
-        max_v += 1.0
-    points = []
-    for t, value in valid:
-        x = x0 + ((t - min_t) / (max_t - min_t)) * width
-        y = y0 + height - ((value - min_v) / (max_v - min_v)) * height
-        points.append(f"{x:.1f},{y:.1f}")
-    return " ".join(points)
+def _valid_pairs(times: list[float], values: list[float | None]) -> tuple[list[float], list[float]]:
+    valid = [(time_s, value) for time_s, value in zip(times, values) if value is not None]
+    if not valid:
+        return [], []
+    xs, ys = zip(*valid, strict=False)
+    return list(xs), list(ys)
 
 
-def _line_x(time_s: float, times: list[float], x0: float, width: float) -> float:
-    min_t = min(times) if times else 0.0
-    max_t = max(times) if times else 1.0
-    if max_t == min_t:
-        max_t += 1.0
-    return x0 + ((time_s - min_t) / (max_t - min_t)) * width
+def _set_time_axis(axis: Any, times: list[float]) -> None:
+    if not times:
+        axis.set_xlabel("Time")
+        return
+
+    max_t = max(times)
+    tick_count = 6
+    if max_t <= 0:
+        ticks = [0]
+    else:
+        ticks = [max_t * index / (tick_count - 1) for index in range(tick_count)]
+    axis.set_xticks(ticks)
+    axis.set_xticklabels([_format_seconds(tick) for tick in ticks])
+    axis.set_xlabel("Time")
+
+
+def _annotate_onset(axis: Any, onset: dict[str, Any] | None, color: str, label: str) -> None:
+    if not onset:
+        return
+    time_s = float(onset["time_s"])
+    axis.axvline(time_s, color=color, linestyle="--", linewidth=1.6, alpha=0.9)
+    ymin, ymax = axis.get_ylim()
+    axis.text(
+        time_s + (max(time_s * 0.01, 2.0)),
+        ymax - ((ymax - ymin) * 0.08),
+        label,
+        color=color,
+        fontsize=9,
+        va="top",
+    )
 
 
 def write_roast_svg(
@@ -44,100 +61,82 @@ def write_roast_svg(
     title: str,
     subtitle: str | None = None,
 ) -> None:
-    width = 1200
-    height = 880
-    left = 80
-    right = 40
-    plot_width = width - left - right
-    panel_height = 180
-    gap = 70
-    top = 80
+    times = [float(time_s) for time_s in series["time_s"]]
+    bean_x, bean_y = _valid_pairs(times, series["bean_temp"])
+    inlet_x, inlet_y = _valid_pairs(times, series["inlet_temp"])
+    ror_x, ror_y = _valid_pairs(times, series["ror30"])
+    heat_x, heat_y = _valid_pairs(times, series["heat"])
+    fan_x, fan_y = _valid_pairs(times, series["fan"])
 
-    temp_y = top
-    ror_y = temp_y + panel_height + gap
-    control_y = ror_y + panel_height + gap
-    crack_y = control_y + panel_height + gap
-    times = series["time_s"]
+    crack_points = series.get("crack_points", [])
+    crack_x = [float(point["time_s"]) for point in crack_points]
+    crack_y = [float(point.get("crack_level", 0)) for point in crack_points]
 
-    time_ticks = []
-    if times:
-        max_t = times[-1]
-        step = max(30, int(max_t // 5) or 30)
-        current = 0
-        while current <= max_t:
-            time_ticks.append(current)
-            current += step
-        if time_ticks[-1] != int(max_t):
-            time_ticks.append(int(max_t))
+    figure, axes = plt.subplots(
+        nrows=4,
+        ncols=1,
+        figsize=(14, 12),
+        sharex=True,
+        constrained_layout=True,
+    )
+
+    figure.suptitle(title, fontsize=20, fontweight="bold")
+    if subtitle:
+        figure.text(0.125, 0.965, subtitle, fontsize=11)
+
+    temperature_axis, ror_axis, control_axis, crack_axis = axes
+
+    if bean_x:
+        temperature_axis.plot(bean_x, bean_y, color="#d97706", linewidth=2.2, label="Bean temp")
+    if inlet_x:
+        temperature_axis.plot(inlet_x, inlet_y, color="#2563eb", linewidth=2.2, label="Inlet temp")
+    temperature_axis.set_title("Temperature", loc="left", fontsize=13, fontweight="bold")
+    temperature_axis.set_ylabel("°C")
+    temperature_axis.grid(True, axis="both", linestyle="--", alpha=0.25)
+    if bean_x or inlet_x:
+        temperature_axis.legend(loc="upper left")
+
+    if ror_x:
+        ror_axis.plot(ror_x, ror_y, color="#7c3aed", linewidth=2.2, label="ROR30")
+    ror_axis.set_title("ROR30", loc="left", fontsize=13, fontweight="bold")
+    ror_axis.set_ylabel("°C/s")
+    ror_axis.grid(True, axis="both", linestyle="--", alpha=0.25)
+    if ror_x:
+        ror_axis.legend(loc="upper left")
+
+    if heat_x:
+        control_axis.plot(heat_x, heat_y, color="#dc2626", linewidth=2.2, label="Heat")
+    if fan_x:
+        control_axis.plot(fan_x, fan_y, color="#059669", linewidth=2.2, label="Fan")
+    control_axis.set_title("Controls", loc="left", fontsize=13, fontweight="bold")
+    control_axis.set_ylabel("%")
+    control_axis.set_ylim(-2, 102)
+    control_axis.grid(True, axis="both", linestyle="--", alpha=0.25)
+    if heat_x or fan_x:
+        control_axis.legend(loc="upper left")
+
+    if crack_x:
+        crack_axis.plot(crack_x, crack_y, color="#111827", linewidth=1.5, alpha=0.7)
+        crack_axis.scatter(crack_x, crack_y, color="#111827", s=28, zorder=3)
+    crack_axis.set_title("Crack signal", loc="left", fontsize=13, fontweight="bold")
+    crack_axis.set_ylabel("level")
+    crack_axis.set_ylim(-0.1, max(2.1, max(crack_y) + 0.3 if crack_y else 2.1))
+    crack_axis.set_yticks([0, 1, 2])
+    crack_axis.grid(True, axis="both", linestyle="--", alpha=0.25)
+
+    for axis in axes:
+        _annotate_onset(axis, series.get("practical_onset"), "#b45309", "practical onset")
+        _annotate_onset(axis, series.get("active_onset"), "#7c2d12", "active onset")
+        if times:
+            axis.set_xlim(min(times), max(times))
+
+    _set_time_axis(crack_axis, times)
 
     notes = series.get("notes", [])
-    subtitle_text = subtitle or ""
-    escaped_title = html.escape(title)
-    escaped_subtitle = html.escape(subtitle_text)
+    if notes:
+        notes_text = "\n".join(f"• {note}" for note in notes[:4])
+        figure.text(0.125, 0.015, notes_text, fontsize=9, va="bottom")
 
-    bean_poly = _polyline_points(times, series["bean_temp"], left, temp_y, plot_width, panel_height)
-    inlet_poly = _polyline_points(times, series["inlet_temp"], left, temp_y, plot_width, panel_height)
-    ror_poly = _polyline_points(times, series["ror30"], left, ror_y, plot_width, panel_height)
-    heat_poly = _polyline_points(times, series["heat"], left, control_y, plot_width, panel_height)
-    fan_poly = _polyline_points(times, series["fan"], left, control_y, plot_width, panel_height)
-    crack_poly = _polyline_points(times, [point.get("crack_level", 0) for point in series["crack_points"]], left, crack_y, plot_width, panel_height)
-
-    parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
-        '<style>text{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;fill:#1f2937} .small{font-size:14px;fill:#4b5563} .label{font-size:16px;font-weight:600} .tick{font-size:12px;fill:#6b7280}</style>',
-        f'<rect x="0" y="0" width="{width}" height="{height}" fill="#ffffff"/>',
-        f'<text x="{left}" y="40" font-size="28" font-weight="700">{escaped_title}</text>',
-        f'<text x="{left}" y="62" class="small">{escaped_subtitle}</text>',
-    ]
-
-    panels = [
-        (temp_y, "Temperature", bean_poly, "#d97706", inlet_poly, "#2563eb"),
-        (ror_y, "ROR30", ror_poly, "#7c3aed", "", "#000000"),
-        (control_y, "Controls", heat_poly, "#dc2626", fan_poly, "#059669"),
-        (crack_y, "Crack signal", crack_poly, "#111827", "", "#000000"),
-    ]
-    for y, label, primary, primary_color, secondary, secondary_color in panels:
-        parts.append(f'<rect x="{left}" y="{y}" width="{plot_width}" height="{panel_height}" fill="#f9fafb" stroke="#e5e7eb"/>')
-        parts.append(f'<text x="{left}" y="{y - 12}" class="label">{html.escape(label)}</text>')
-        if primary:
-            parts.append(f'<polyline fill="none" stroke="{primary_color}" stroke-width="3" points="{primary}"/>')
-        if secondary:
-            parts.append(f'<polyline fill="none" stroke="{secondary_color}" stroke-width="3" points="{secondary}"/>')
-        for tick in time_ticks:
-            x = _line_x(float(tick), times, left, plot_width)
-            parts.append(f'<line x1="{x:.1f}" y1="{y}" x2="{x:.1f}" y2="{y + panel_height}" stroke="#e5e7eb" stroke-dasharray="4 4"/>')
-            parts.append(f'<text x="{x:.1f}" y="{y + panel_height + 18}" text-anchor="middle" class="tick">{_fmt_label(float(tick))}</text>')
-
-    for key, color in [("practical_onset", "#b45309"), ("active_onset", "#7c2d12")]:
-        onset = series.get(key)
-        if onset:
-            x = _line_x(float(onset["time_s"]), times, left, plot_width)
-            parts.append(f'<line x1="{x:.1f}" y1="{temp_y}" x2="{x:.1f}" y2="{crack_y + panel_height}" stroke="{color}" stroke-width="2" stroke-dasharray="8 6"/>')
-            parts.append(f'<text x="{x + 6:.1f}" y="{temp_y + 16}" class="small">{html.escape(key)}</text>')
-
-    for point in series.get("crack_points", []):
-        x = _line_x(float(point["time_s"]), times, left, plot_width)
-        parts.append(f'<circle cx="{x:.1f}" cy="{crack_y + panel_height/2:.1f}" r="4" fill="#111827"/>')
-
-    legend_y = crack_y + panel_height + 48
-    legend = [
-        ("Bean temp", "#d97706"),
-        ("Inlet temp", "#2563eb"),
-        ("ROR30", "#7c3aed"),
-        ("Heat", "#dc2626"),
-        ("Fan", "#059669"),
-    ]
-    x = left
-    for label, color in legend:
-        parts.append(f'<line x1="{x}" y1="{legend_y}" x2="{x + 24}" y2="{legend_y}" stroke="{color}" stroke-width="4"/>')
-        parts.append(f'<text x="{x + 32}" y="{legend_y + 5}" class="small">{html.escape(label)}</text>')
-        x += 160
-
-    note_y = legend_y + 32
-    for note in notes[:4]:
-        parts.append(f'<text x="{left}" y="{note_y}" class="small">• {html.escape(note)}</text>')
-        note_y += 20
-
-    parts.append('</svg>')
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text("\n".join(parts))
+    figure.savefig(output_path, format="svg")
+    plt.close(figure)
