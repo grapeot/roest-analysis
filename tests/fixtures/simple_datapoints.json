@@ -1,0 +1,15 @@
+[
+  {"msec": 0, "bt": 205.0, "crack": 0, "heat": 0, "fan": 43},
+  {"msec": 30000, "bt": 120.0, "crack": 0, "heat": 30, "fan": 43},
+  {"msec": 60000, "bt": 90.0, "crack": 0, "heat": 40, "fan": 43},
+  {"msec": 90000, "bt": 110.0, "crack": 0, "heat": 45, "fan": 43},
+  {"msec": 120000, "bt": 130.0, "crack": 0, "heat": 50, "fan": 43},
+  {"msec": 150000, "bt": 150.0, "crack": 0, "heat": 50, "fan": 43},
+  {"msec": 240000, "bt": 190.0, "crack": 1, "heat": 54, "fan": 43},
+  {"msec": 246000, "bt": 192.0, "crack": 0, "heat": 54, "fan": 43},
+  {"msec": 252000, "bt": 194.0, "crack": 1, "heat": 54, "fan": 44},
+  {"msec": 258000, "bt": 196.0, "crack": 1, "heat": 54, "fan": 45},
+  {"msec": 288000, "bt": 205.0, "crack": 2, "heat": 55, "fan": 47},
+  {"msec": 300000, "bt": 209.0, "crack": 1, "heat": 55, "fan": 48},
+  {"msec": 330000, "bt": 214.0, "crack": 0, "heat": 0, "fan": 93}
+]
