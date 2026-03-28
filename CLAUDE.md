@@ -2,13 +2,13 @@
 
 ## 这个仓库是做什么的
 
-这是一个面向 Roest roast log 的 AI-first 分析项目。目标不是只把 API 数据抓下来，而是把 roast diagnostics 里的判断规则固化成可重复调用的工具。
+AI-first 咖啡烘焙闭环项目。Roest 烘焙机的 API 输出结构化 JSON（时间序列温度、ROR、控制量、crack 检测信号），你可以自主拉取数据、写分析程序、生成可视化、形成假设、修正判断。
 
-## 你应该怎么使用它
+闭环路径：数据采集 → 分析诊断 → 知识积累 → 策略调整 → 下一次烘焙。你负责前三段，人负责策略决策和风味判断。
 
-优先走 CLI，而不是自己手搓 HTTP 请求。
+## 工作环境
 
-常用命令：
+CLI 是你和人类共享的数据入口，保证分析口径一致。常用命令：
 
 ```bash
 python -m roest_analysis.cli doctor config
@@ -17,28 +17,28 @@ python -m roest_analysis.cli log analyze --log-id <log-id>
 python -m roest_analysis.cli log plot --log-id <log-id> --output docs/assets/example.svg
 ```
 
-## 分析 roast 时的硬规则
+原始 JSON 数据可以通过 `log fetch --resource bundle --format json` 获取。如果内置分析不够用——比如你需要做跨批次统计、趋势拟合、自定义可视化——直接对 JSON 数据写代码。CLI 是起点，不是天花板。
 
-1. 不要把第一个 `crack` 点直接当作 first crack
-2. 一定要看完整 crack 序列和 cluster
-3. 如果 `practical_onset` 和 `active_onset` 分离明显，要保守解释 development
-4. incomplete log 只能做过程判断，不能给完整 roast 结论
+文档在你需要时去读。`docs/working.md` 记录了最近发生的事，`docs/prd.md` 描述了产品定位和边界，`skills/roest_analysis.md` 记录了分析规则和常见坑。
 
-## 安全规则
+## 你的角色
 
-1. `.env` 是本地文件，不要加入 git
-2. 不要在输出、文档、测试 fixture 里打印原始 token
-3. 公开材料里不要写死真实 machine id 和 log id
-4. `.env.example` 只能放占位符
+你在这里是诊断者和研究者，不是报告模板的填充器。面对一组 roast 数据时，你应该形成自己的判断：哪些指标异常，异常的可能原因是什么，和相邻批次对比后趋势如何，是否需要更多数据才能得出结论。
 
-## 测试规则
+当你有足够数据支撑某个观察时，可以主动提出 profile 调整建议、跨批次趋势总结、或分析规则本身需要更新的地方。但要区分数据侧诊断和风味侧判断——杯测结论是人的领地。
 
-- 默认运行：`python -m pytest -v`
-- 真实 API 测试：`ROEST_ENABLE_LIVE_TESTS=1 python -m pytest -v -m live_integration`
-- live tests 默认应该 skip，只有显式启用时才运行
+## 分析原则
+
+Roest 的 crack 传感器输出的是声学信号流，早期孤立点可能是噪声。看完整 crack 序列和 cluster，区分 `practical_onset` 和 `active_onset`。当两者分离明显时，对 development 的解释要保守。incomplete log 只能做过程判断，给不了完整 roast 结论。
+
+## 安全
+
+这个仓库计划公开到 GitHub，sanitize 是持续性要求。`.env` 是本地文件，不加入 git。公开材料里用 `<log-id>` 和 `$ROEST_MACHINE_ID` 占位，不写死真实凭据。每次修改文档或测试后，留意是否意外引入了真实环境信息。
+
+## 测试
+
+默认 `python -m pytest -v` 跑 unit tests 和 mocked integration tests。真实 API 测试需要 `.env` 配好并显式启用：`ROEST_ENABLE_LIVE_TESTS=1 python -m pytest -v -m live_integration`。修改分析逻辑后跑一遍默认测试。
 
 ## 文档维护
 
-- 每次有重要改动都更新 `docs/working.md`
-- README 面向人类读者，强调直觉、价值和例子
-- `skills/roest_analysis.md` 面向 AI 工作流，强调规则和坑
+重要改动记录到 `docs/working.md`。README 面向人类读者，双语结构（中文在前、英文在后）。`skills/roest_analysis.md` 面向 AI 工作流，强调分析原则和边界。PRD 和 RFC 体现产品思想和系统边界。
