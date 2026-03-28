@@ -33,20 +33,21 @@ def test_api_client_formats_known_endpoints():
         base_url="https://api.roestcoffee.com",
         timeout_seconds=12.0,
         enable_live_tests=False,
+        machine_id=9999,
         env_path=Path(".env"),
     )
 
     client = RoestApiClient(settings, transport=transport)
     bundle = client.get_log_bundle(123)
-    client.get_logs(machine_id=2559)
-    client.get_machine_slots(2559)
-    client.get_flagged_logs(2559, 36)
+    client.get_logs(machine_id=9999)
+    client.get_machine_slots(9999)
+    client.get_flagged_logs(9999, 36)
 
     assert bundle.log["id"] == 123
     assert bundle.datapoints == []
     assert seen[0][0].endswith("/logs/123/")
     assert seen[1][0].endswith("/datapoints/?page_size=all&log=123")
-    assert seen[2][0].endswith("/logs/?machine=2559")
-    assert seen[3][0].endswith("/machineslots/?machine=2559")
-    assert seen[4][0].endswith("/logs/?machine=2559&event_flags=36")
+    assert seen[2][0].endswith("/logs/?machine=9999")
+    assert seen[3][0].endswith("/machineslots/?machine=9999")
+    assert seen[4][0].endswith("/logs/?machine=9999&event_flags=36")
     assert seen[0][1]["Authorization"] == "Bearer secret-token"

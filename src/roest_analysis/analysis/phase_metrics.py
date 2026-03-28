@@ -55,6 +55,7 @@ def compute_phase_metrics(
     )
 
     practical_onset = crack_analysis.get("practical_onset")
+    active_onset = crack_analysis.get("active_onset")
     onset_time_s = practical_onset["time_s"] if practical_onset else None
     onset_point = None
     onset_index = None
@@ -91,5 +92,25 @@ def compute_phase_metrics(
     else:
         metrics["practical_onset"] = None
         metrics["development"] = None
+
+    if active_onset is not None:
+        active_index = min(
+            range(len(valid)), key=lambda idx: abs(_time_s(valid[idx]) - active_onset["time_s"])
+        )
+        active_point = valid[active_index]
+        active_development_time_s = _time_s(drop) - _time_s(active_point)
+        metrics["active_onset"] = {
+            "time_s": _time_s(active_point),
+            "bt": _bt(active_point),
+            "ror30": _ror30(valid, active_index),
+        }
+        metrics["active_development"] = {
+            "time_s": active_development_time_s,
+            "ratio": active_development_time_s / _time_s(drop),
+            "delta_bt": (_bt(drop) or 0.0) - (_bt(active_point) or 0.0),
+        }
+    else:
+        metrics["active_onset"] = None
+        metrics["active_development"] = None
 
     return metrics

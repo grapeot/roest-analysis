@@ -14,7 +14,9 @@ def render_text_summary(result: dict[str, Any]) -> str:
     metrics = result["metrics"]
     crack = result["crack_analysis"]
     development = metrics.get("development")
+    active_development = metrics.get("active_development")
     practical = metrics.get("practical_onset")
+    active_onset = metrics.get("active_onset")
 
     lines = [
         f"Log ID: {result['log_id']}",
@@ -32,6 +34,14 @@ def render_text_summary(result: dict[str, Any]) -> str:
     if development:
         lines.append(
             f"Development: {_fmt_time(development['time_s'])} / {development['ratio'] * 100:.1f}% / ΔBT {development['delta_bt']:.1f}"
+        )
+    if active_onset:
+        lines.append(
+            f"Active crack onset: {_fmt_time(active_onset['time_s'])} / BT {active_onset['bt']:.1f} / ROR30 {active_onset['ror30']:.3f}"
+        )
+    if active_development:
+        lines.append(
+            f"Active-cluster development: {_fmt_time(active_development['time_s'])} / {active_development['ratio'] * 100:.1f}% / ΔBT {active_development['delta_bt']:.1f}"
         )
     lines.append(f"Crack clusters: {len(crack['clusters'])}")
     if crack.get("outlier_points"):

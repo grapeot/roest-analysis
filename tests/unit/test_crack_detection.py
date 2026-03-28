@@ -23,3 +23,20 @@ def test_no_crack_points_is_ambiguous():
 
     assert result["practical_onset"] is None
     assert result["ambiguous"] is True
+
+
+def test_split_clusters_are_marked_ambiguous():
+    datapoints = [
+        {"msec": 270000, "bt": 193.5, "crack": 1},
+        {"msec": 294000, "bt": 201.6, "crack": 1},
+        {"msec": 300000, "bt": 203.6, "crack": 1},
+        {"msec": 313000, "bt": 207.4, "crack": 2},
+        {"msec": 314000, "bt": 207.7, "crack": 1},
+        {"msec": 315000, "bt": 208.0, "crack": 1},
+        {"msec": 318000, "bt": 208.8, "crack": 1},
+    ]
+
+    result = analyze_crack_signal(datapoints)
+
+    assert result["ambiguous"] is True
+    assert any("conservatively" in note for note in result["notes"])

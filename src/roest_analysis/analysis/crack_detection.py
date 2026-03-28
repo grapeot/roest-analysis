@@ -125,6 +125,15 @@ def analyze_crack_signal(datapoints: list[dict[str, Any]]) -> dict[str, Any]:
             and runner_up.max_level >= best_cluster.max_level
         )
 
+    if practical_cluster != best_cluster:
+        delayed_active = best_cluster.start_time_s - practical_cluster.start_time_s
+        stronger_active = (
+            best_cluster.point_count > practical_cluster.point_count
+            or best_cluster.max_level > practical_cluster.max_level
+        )
+        if delayed_active >= 12 and stronger_active:
+            ambiguity = True
+
     notes = []
     if outlier_points:
         notes.append(
@@ -132,6 +141,10 @@ def analyze_crack_signal(datapoints: list[dict[str, Any]]) -> dict[str, Any]:
         )
     if ambiguity:
         notes.append("Multiple crack clusters look similarly strong. Review the full sequence.")
+    if practical_cluster != best_cluster:
+        notes.append(
+            "Practical onset and active crack cluster diverge; interpret development conservatively."
+        )
 
     return {
         "points": [

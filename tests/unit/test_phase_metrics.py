@@ -21,3 +21,25 @@ def test_phase_metrics_use_practical_onset():
     assert metrics["yellow"]["time_s"] == 150.0
     assert metrics["practical_onset"]["time_s"] == 294.0
     assert round(metrics["development"]["time_s"], 1) == 36.0
+
+
+def test_phase_metrics_include_active_development_window():
+    datapoints = [
+        {"msec": 0, "bt": 205.0, "crack": 0},
+        {"msec": 30000, "bt": 120.0, "crack": 0},
+        {"msec": 60000, "bt": 90.0, "crack": 0},
+        {"msec": 150000, "bt": 150.0, "crack": 0},
+        {"msec": 270000, "bt": 193.5, "crack": 1},
+        {"msec": 294000, "bt": 201.6, "crack": 1},
+        {"msec": 300000, "bt": 203.6, "crack": 1},
+        {"msec": 313000, "bt": 207.4, "crack": 2},
+        {"msec": 314000, "bt": 207.7, "crack": 1},
+        {"msec": 315000, "bt": 208.0, "crack": 1},
+        {"msec": 330000, "bt": 213.8, "crack": 0},
+    ]
+
+    crack_analysis = analyze_crack_signal(datapoints)
+    metrics = compute_phase_metrics(datapoints, crack_analysis)
+
+    assert metrics["active_onset"]["time_s"] == 313.0
+    assert round(metrics["active_development"]["time_s"], 1) == 17.0

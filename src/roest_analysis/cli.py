@@ -3,11 +3,13 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from .api.client import RoestApiClient
 from .config import load_settings
 from .errors import ConfigurationError, RoestAnalysisError
 from .services.analyze_log import analyze_log_id
+from .services.plot_log import plot_log_id
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -34,6 +36,11 @@ def _build_parser() -> argparse.ArgumentParser:
     analyze_parser.add_argument("--log-id", type=int, required=True)
     analyze_parser.add_argument("--format", choices=["text", "json"], default="text")
 
+    plot_parser = log_subparsers.add_parser("plot")
+    plot_parser.add_argument("--log-id", type=int, required=True)
+    plot_parser.add_argument("--output", type=Path, required=True)
+    plot_parser.add_argument("--title")
+
     machine_parser = subparsers.add_parser("machine")
     machine_subparsers = machine_parser.add_subparsers(dest="machine_command", required=True)
 
@@ -42,10 +49,10 @@ def _build_parser() -> argparse.ArgumentParser:
     logs.add_argument("--event-flags", type=int)
 
     slots = machine_subparsers.add_parser("slots")
-    slots.add_argument("--machine-id", type=int, required=True)
+    slots.add_argument("--machine-id", type=int)
 
     flagged = machine_subparsers.add_parser("flagged-logs")
-    flagged.add_argument("--machine-id", type=int, required=True)
+    flagged.add_argument("--machine-id", type=int)
     flagged.add_argument("--event-flags", type=int, default=36)
 
     return parser
@@ -64,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
                 "base_url": settings.base_url,
                 "timeout_seconds": settings.timeout_seconds,
                 "enable_live_tests": settings.enable_live_tests,
+                "machine_id": settings.machine_id,
                 "token": settings.masked_token,
             }
             print(json.dumps(payload, indent=2, sort_keys=True))
@@ -88,14 +96,25 @@ def main(argv: list[str] | None = None) -> int:
                 print(result["summary_text"])
             return 0
 
+        if args.command == "log" and args.log_command == "plot":
+            result = plot_log_id(client, args.log_id, output_path=args.output, title=args.title)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0
+
+        machine_id = getattr(args, "machine_id", None) or settings.machine_id
+
         if args.command == "machine" and args.machine_command == "slots":
-            print(json.dumps(client.get_machine_slots(args.machine_id), indent=2, sort_keys=True))
+            if machine_id is None:
+                raise ConfigurationError("Machine command requires --machine-id or ROEST_MACHINE_ID.")
+            print(json.dumps(client.get_machine_slots(machine_id), indent=2, sort_keys=True))
             return 0
 
         if args.command == "machine" and args.machine_command == "logs":
+            if machine_id is None:
+                raise ConfigurationError("Machine command requires --machine-id or ROEST_MACHINE_ID.")
             print(
                 json.dumps(
-                    client.get_logs(machine_id=args.machine_id, event_flags=args.event_flags),
+                    client.get_logs(machine_id=machine_id, event_flags=args.event_flags),
                     indent=2,
                     sort_keys=True,
                 )
@@ -103,9 +122,11 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "machine" and args.machine_command == "flagged-logs":
+            if machine_id is None:
+                raise ConfigurationError("Machine command requires --machine-id or ROEST_MACHINE_ID.")
             print(
                 json.dumps(
-                    client.get_flagged_logs(args.machine_id, args.event_flags),
+                    client.get_flagged_logs(machine_id, args.event_flags),
                     indent=2,
                     sort_keys=True,
                 )

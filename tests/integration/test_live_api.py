@@ -15,10 +15,17 @@ def test_live_log_fetch_and_datapoints():
         pytest.skip("ROEST_API_TOKEN is not configured")
     if not settings.enable_live_tests:
         pytest.skip("ROEST_ENABLE_LIVE_TESTS is not enabled")
+    if settings.machine_id is None:
+        pytest.skip("ROEST_MACHINE_ID is not configured")
     client = RoestApiClient(settings)
-    log = client.get_log(3598310)
-    datapoints = client.get_datapoints(3598310)
-    assert log["id"] == 3598310
+    logs = client.get_logs(machine_id=settings.machine_id)
+    items = logs["results"] if isinstance(logs, dict) and "results" in logs else logs
+    completed = [entry for entry in items if entry.get("drop_timestamp")]
+    assert completed
+    log_id = completed[0]["id"]
+    log = client.get_log(log_id)
+    datapoints = client.get_datapoints(log_id)
+    assert log["id"] == log_id
     assert isinstance(datapoints, list)
     assert datapoints
 
@@ -33,7 +40,10 @@ def test_live_list_logs_and_analyze_first_three():
         pytest.skip("ROEST_ENABLE_LIVE_TESTS is not enabled")
 
     client = RoestApiClient(settings)
-    logs = client.get_logs(machine_id=2559)
+    if settings.machine_id is None:
+        pytest.skip("ROEST_MACHINE_ID is not configured")
+
+    logs = client.get_logs(machine_id=settings.machine_id)
 
     if isinstance(logs, dict) and "results" in logs:
         items = logs["results"]

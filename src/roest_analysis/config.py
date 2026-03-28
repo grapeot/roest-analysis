@@ -13,6 +13,7 @@ class Settings:
     base_url: str
     timeout_seconds: float
     enable_live_tests: bool
+    machine_id: int | None
     env_path: Path
 
     @property
@@ -66,10 +67,13 @@ def load_settings(env_path: Path | None = None) -> Settings:
         "yes",
         "YES",
     }
+    machine_id_raw = get_value("ROEST_MACHINE_ID")
+    machine_id = int(machine_id_raw) if machine_id_raw else None
     return Settings(
         api_token=api_token,
         base_url=base_url.rstrip("/"),
         timeout_seconds=timeout,
         enable_live_tests=enable_live_tests,
+        machine_id=machine_id,
         env_path=resolved_env_path,
     )
